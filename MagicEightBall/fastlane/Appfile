@@ -1,0 +1,9 @@
+# Replace these with your own values before the first upload.
+#
+# app_identifier must match PRODUCT_BUNDLE_IDENTIFIER in project.yml and the
+# bundle ID registered in App Store Connect.
+
+app_identifier(ENV["APP_IDENTIFIER"] || "com.eightballoracle.app")
+apple_id(ENV["APPLE_ID"])
+team_id(ENV["DEVELOPMENT_TEAM"])
+itc_team_id(ENV["ITC_TEAM_ID"])

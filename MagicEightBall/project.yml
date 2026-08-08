@@ -1,0 +1,106 @@
+# XcodeGen spec — the .xcodeproj is generated, not checked in, so the project
+# file can never drift from the sources or produce merge conflicts.
+#
+#   brew install xcodegen && xcodegen generate
+#
+# Signing lives in Configuration/Signing.xcconfig so this file needs no
+# environment variables to generate. See docs/DEPLOYMENT.md.
+
+name: EightBallOracle
+
+options:
+  bundleIdPrefix: com.eightballoracle
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "17.0"
+  groupSortPosition: top
+  generateEmptyDirectories: false
+
+configFiles:
+  Debug: Configuration/Signing.xcconfig
+  Release: Configuration/Signing.xcconfig
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.9"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SWIFT_STRICT_CONCURRENCY: targeted
+  configs:
+    Debug:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+      ONLY_ACTIVE_ARCH: YES
+    Release:
+      SWIFT_COMPILATION_MODE: wholemodule
+      VALIDATE_PRODUCT: YES
+
+packages:
+  EightBallCore:
+    path: Core
+
+targets:
+  EightBallOracle:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes:
+          # Referenced directly by INFOPLIST_FILE; must not also be copied in
+          # as a bundle resource.
+          - "Resources/Info.plist"
+          - "**/.DS_Store"
+    dependencies:
+      - package: EightBallCore
+        product: EightBallCore
+    settings:
+      base:
+        PRODUCT_NAME: Eight Ball Oracle
+        PRODUCT_BUNDLE_IDENTIFIER: com.eightballoracle.app
+        INFOPLIST_FILE: App/Resources/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+        SWIFT_EMIT_LOC_STRINGS: YES
+        ENABLE_PREVIEWS: YES
+
+  EightBallOracleUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: EightBallOracle
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.eightballoracle.app.uitests
+        TEST_TARGET_NAME: EightBallOracle
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+
+schemes:
+  EightBallOracle:
+    build:
+      targets:
+        EightBallOracle: all
+        EightBallOracleUITests: [test]
+    run:
+      config: Debug
+      # Local StoreKit testing: purchases resolve against Products.storekit with
+      # no App Store Connect round-trip and no sandbox account required.
+      storeKitConfiguration: Configuration/Products.storekit
+    test:
+      config: Debug
+      gatherCoverageData: true
+      coverageTargets:
+        - EightBallOracle
+      # The Core package's logic tests run standalone via `swift test` (and in
+      # CI on Linux); this scheme covers the app and its UI flows.
+      targets:
+        - EightBallOracleUITests
+      storeKitConfiguration: Configuration/Products.storekit
+    archive:
+      config: Release

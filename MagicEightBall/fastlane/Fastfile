@@ -1,0 +1,163 @@
+# Deployment lanes for Eight Ball Oracle.
+#
+# Requires a Mac with Xcode. Authentication uses an App Store Connect API key
+# (not an Apple ID password), which is what CI needs and what avoids 2FA
+# prompts. See docs/DEPLOYMENT.md for how to create one.
+#
+# Environment variables:
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_CONTENT  (required for beta/release)
+#   DEVELOPMENT_TEAM                            (required for beta/release)
+#   MATCH_GIT_URL                               (optional — see signing note)
+#
+# Usage:
+#   bundle exec fastlane core_tests
+#   bundle exec fastlane tests
+#   bundle exec fastlane beta
+#   bundle exec fastlane release
+
+default_platform(:ios)
+
+SCHEME    = "EightBallOracle"
+PROJECT   = "EightBallOracle.xcodeproj"
+BUNDLE_ID = ENV["APP_IDENTIFIER"] || "com.eightballoracle.app"
+
+platform :ios do
+  before_all do
+    # The .xcodeproj is generated, never committed, so every lane regenerates
+    # it first. This is also what keeps CI from building a stale project file.
+    sh("cd .. && xcodegen generate")
+  end
+
+  desc "Run the Core package's logic tests (fast, no simulator)"
+  lane :core_tests do
+    sh("cd ../Core && swift test")
+  end
+
+  desc "Run the UI flow tests on a simulator"
+  lane :tests do
+    run_tests(
+      project: PROJECT,
+      scheme: SCHEME,
+      devices: ["iPhone 15"],
+      code_coverage: true,
+      result_bundle: true,
+      output_directory: "fastlane/test_output"
+    )
+  end
+
+  desc "Build and upload a build to TestFlight"
+  lane :beta do
+    key = asc_api_key
+    prepare_signing(key)
+
+    # Build numbers must be unique per upload. Deriving from TestFlight rather
+    # than a local counter avoids collisions between machines and CI, and
+    # survives the project being regenerated.
+    increment_build_number(
+      xcodeproj: PROJECT,
+      build_number: latest_testflight_build_number(
+        api_key: key,
+        app_identifier: BUNDLE_ID,
+        initial_build_number: 0
+      ) + 1
+    )
+
+    build_app(
+      project: PROJECT,
+      scheme: SCHEME,
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "build",
+      clean: true,
+      xcargs: team_xcargs
+    )
+
+    upload_to_testflight(
+      api_key: key,
+      app_identifier: BUNDLE_ID,
+      skip_waiting_for_build_processing: false,
+      distribute_external: false,
+      changelog: testflight_changelog
+    )
+  end
+
+  desc "Run tests, build, upload metadata and a build, then submit for review"
+  lane :release do
+    core_tests
+    tests
+
+    key = asc_api_key
+    prepare_signing(key)
+
+    build_app(
+      project: PROJECT,
+      scheme: SCHEME,
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "build",
+      clean: true,
+      xcargs: team_xcargs
+    )
+
+    upload_to_app_store(
+      api_key: key,
+      app_identifier: BUNDLE_ID,
+      submit_for_review: true,
+      automatic_release: false,
+      force: true,
+      precheck_include_in_app_purchases: true,
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_uses_encryption: false,
+        content_rights_contains_third_party_content: false
+      }
+    )
+  end
+
+  desc "Capture App Store screenshots on the required device sizes"
+  lane :screenshots do
+    capture_screenshots(
+      project: PROJECT,
+      scheme: SCHEME,
+      output_directory: "fastlane/screenshots"
+    )
+    frame_screenshots(white: true) if ENV["FRAME_SCREENSHOTS"]
+  end
+
+  # --- helpers -------------------------------------------------------------
+
+  def asc_api_key
+    app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_content: ENV.fetch("ASC_KEY_CONTENT"),
+      is_key_content_base64: true,
+      in_house: false
+    )
+  end
+
+  # Automatic signing covers the solo-developer case with no extra setup.
+  # fastlane match is only used when MATCH_GIT_URL is set, because match
+  # against an unconfigured repository fails rather than falling back.
+  def prepare_signing(key)
+    return if ENV["MATCH_GIT_URL"].to_s.empty?
+
+    sync_code_signing(
+      type: "appstore",
+      app_identifier: BUNDLE_ID,
+      git_url: ENV.fetch("MATCH_GIT_URL"),
+      api_key: key,
+      readonly: is_ci
+    )
+  end
+
+  def team_xcargs
+    team = ENV["DEVELOPMENT_TEAM"]
+    team.to_s.empty? ? nil : "DEVELOPMENT_TEAM=#{team}"
+  end
+
+  def testflight_changelog
+    path = "../CHANGELOG_TESTFLIGHT.txt"
+    File.exist?(path) ? File.read(path) : "Bug fixes and improvements."
+  end
+end
