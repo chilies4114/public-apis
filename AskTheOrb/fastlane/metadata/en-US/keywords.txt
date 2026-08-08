@@ -1,0 +1,1 @@
+fortune,yes or no,decision,oracle,orb,crystal ball,shake,answer,random,odds,probability,psychic,party,fun

@@ -1,0 +1,82 @@
+name: Ask the Orb
+
+on:
+  push:
+    paths:
+      - "AskTheOrb/**"
+      - ".github/workflows/ask-the-orb-ios.yml"
+  pull_request:
+    paths:
+      - "AskTheOrb/**"
+      - ".github/workflows/ask-the-orb-ios.yml"
+
+jobs:
+  core-tests:
+    # The Core package is UI-free on purpose, so the logic that actually decides
+    # the odds can be tested on a cheap Linux runner on every push.
+    name: Core logic (Linux)
+    runs-on: ubuntu-latest
+    container: swift:5.9
+    steps:
+      - uses: actions/checkout@v4
+      - name: swift test
+        working-directory: AskTheOrb/Core
+        run: swift test --enable-code-coverage
+
+  app-tests:
+    # Simulator builds need macOS. Kept to pull requests to stay off the
+    # 10x-billed macOS minutes on every branch push.
+    name: App + UI tests (macOS)
+    runs-on: macos-14
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        working-directory: AskTheOrb
+        run: xcodegen generate
+
+      - name: Build and test
+        working-directory: AskTheOrb
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project AskTheOrb.xcodeproj \
+            -scheme AskTheOrb \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: AskTheOrb/TestResults.xcresult
+
+  icon:
+    name: App icon is submittable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install Pillow
+      - name: Icon must be 1024x1024 RGB with no alpha
+        run: |
+          python3 - <<'PY'
+          from PIL import Image
+          path = "AskTheOrb/App/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png"
+          icon = Image.open(path)
+          assert icon.size == (1024, 1024), f"expected 1024x1024, got {icon.size}"
+          assert icon.mode == "RGB", f"App Store Connect rejects alpha channels, got mode {icon.mode}"
+          print("icon OK:", icon.size, icon.mode)
+          PY
