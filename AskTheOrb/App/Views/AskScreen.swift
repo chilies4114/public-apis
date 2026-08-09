@@ -102,7 +102,10 @@ struct AskScreen: View {
                 .accessibilityIdentifier(A11y.questionField)
 
             HStack(spacing: 10) {
-                Label(preferences.activeScaleName(isPro: isPro), systemImage: "dial.medium")
+                Label(
+                    "\(preferences.measuredOdds(isPro: isPro).percentages.affirmative)% yes",
+                    systemImage: "chart.pie.fill"
+                )
                 Text("·")
                 Text(quotaText)
                     .accessibilityIdentifier(A11y.quotaLabel)
@@ -222,12 +225,12 @@ struct AskScreen: View {
                         .foregroundStyle(Theme.tint(for: prediction.sentiment))
                         .accessibilityIdentifier(A11y.readingVerdict)
                     Spacer()
-                    Text("\(prediction.likelihoodPercent)% chance of yes")
-                        .font(.subheadline.weight(.semibold))
+                    Text("\(prediction.chanceDescription) chance")
+                        .font(.subheadline.weight(.semibold).monospacedDigit())
                         .foregroundStyle(.white.opacity(0.85))
                 }
 
-                LikelihoodBar(likelihood: prediction.likelihood, sentiment: prediction.sentiment)
+                OddsBar(odds: prediction.odds, emphasising: prediction.sentiment)
 
                 HStack {
                     Text(prediction.packName)
@@ -319,7 +322,6 @@ struct AskScreen: View {
     private func draw(question trimmed: String, variant: Int) {
         let reading = oracle.predict(
             question: trimmed,
-            scale: preferences.activeScale(isPro: isPro),
             allowedPackIDs: preferences.activePackIDs(isPro: isPro),
             date: Date(),
             variant: variant

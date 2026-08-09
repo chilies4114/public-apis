@@ -218,8 +218,7 @@ struct OrbView: View {
                 sentiment: .affirmative,
                 packID: "classic",
                 packName: "Classic",
-                likelihood: 0.81,
-                scale: .classic,
+                odds: .perPack,
                 date: .now,
                 variant: 0
             ),

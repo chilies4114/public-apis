@@ -2,7 +2,7 @@
 import PackageDescription
 
 // OrbCore is deliberately UI-free and platform-agnostic so the prediction
-// logic, probability scales and entitlement rules can be unit tested on any
+// logic, odds measurement and entitlement rules can be unit tested on any
 // machine (including CI runners without Xcode). The SwiftUI app target lives in
 // the Xcode project generated from project.yml and depends on this package.
 let package = Package(

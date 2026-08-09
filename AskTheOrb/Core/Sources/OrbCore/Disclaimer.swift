@@ -14,7 +14,7 @@ public enum Disclaimer {
     public static let points: [(heading: String, body: String)] = [
         (
             "Every answer is random",
-            "The orb draws from the odds you set. It knows nothing about you, your situation, or what happens next, and its answers carry no meaning beyond the roll that produced them."
+            "The orb draws one answer at random from a fixed pool. Nobody sets the odds — not you, not us. It knows nothing about you, your situation, or what happens next."
         ),
         (
             "Nothing here is advice",
@@ -35,5 +35,5 @@ public enum Disclaimer {
 
     /// One-paragraph version, for the store listing and Settings footer.
     public static let short =
-        "Ask the Orb is entertainment only. Answers are drawn at random from odds you choose. The app cannot predict anything, and nothing it says is medical, legal, financial, or psychological advice."
+        "Ask the Orb is entertainment only. Answers are drawn at random from a fixed pool. The app cannot predict anything, and nothing it says is medical, legal, financial, or psychological advice."
 }

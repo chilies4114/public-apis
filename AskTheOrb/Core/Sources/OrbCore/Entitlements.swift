@@ -4,7 +4,6 @@ import Foundation
 public enum ProFeature: String, CaseIterable, Identifiable, Sendable {
     case unlimitedAsks
     case allAnswerPacks
-    case customProbability
     case askAgain
     case fullHistory
     case insights
@@ -15,7 +14,6 @@ public enum ProFeature: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .unlimitedAsks: return "Unlimited questions"
         case .allAnswerPacks: return "Every answer pack"
-        case .customProbability: return "Tune the odds"
         case .askAgain: return "Ask again"
         case .fullHistory: return "Full history"
         case .insights: return "Insights"
@@ -27,15 +25,13 @@ public enum ProFeature: String, CaseIterable, Identifiable, Sendable {
         case .unlimitedAsks:
             return "Ask as much as you like. No daily cap, ever."
         case .allAnswerPacks:
-            return "Cosmic, Deadpan, Fortune Cookie, Boardroom and High Seas — mix and match."
-        case .customProbability:
-            return "Set the exact odds of yes, maybe and no with a custom scale."
+            return "Cosmic, Deadpan, Fortune Cookie, Boardroom and High Seas. Every pack has the same 10/5/5 shape, so the odds never move."
         case .askAgain:
             return "Re-roll a question you already asked today."
         case .fullHistory:
             return "Keep every reading, search it, and add your own notes."
         case .insights:
-            return "See how the orb has actually been leaning over time."
+            return "Compare the odds you were given against the results you actually got."
         }
     }
 
@@ -43,7 +39,6 @@ public enum ProFeature: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .unlimitedAsks: return "infinity"
         case .allAnswerPacks: return "square.stack.3d.up.fill"
-        case .customProbability: return "slider.horizontal.3"
         case .askAgain: return "arrow.clockwise"
         case .fullHistory: return "clock.arrow.circlepath"
         case .insights: return "chart.bar.fill"
@@ -57,7 +52,6 @@ public enum FreeTier {
     public static let dailyQuestionLimit = 5
     public static let historyLimit = 3
     public static let packIDs = AnswerCatalog.freePackIDs
-    public static let preset = ScalePreset.classic
 }
 
 /// Tracks how many questions have been asked today.

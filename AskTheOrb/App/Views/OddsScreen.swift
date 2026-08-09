@@ -1,15 +1,22 @@
 import SwiftUI
 import OrbCore
 
-/// Where the probability scale is chosen or tuned.
+/// Where the odds are *shown*, not set.
+///
+/// There used to be presets and sliders here. They're gone: letting someone
+/// dial their own fortune to 90% yes makes the number meaningless, and it made
+/// the paid tier a way to rig your own luck. What's left is a measurement —
+/// what the odds actually are, and what results the user actually got.
 @MainActor
 struct OddsScreen: View {
     @EnvironmentObject private var store: SubscriptionManager
     @EnvironmentObject private var preferences: Preferences
+    @EnvironmentObject private var history: HistoryStore
 
     @State private var paywallFeature: ProFeature?
 
     private var isPro: Bool { store.isPro }
+    private var odds: OddsMeasurement { preferences.measuredOdds(isPro: isPro) }
 
     var body: some View {
         NavigationStack {
@@ -18,9 +25,9 @@ struct OddsScreen: View {
 
                 ScrollView {
                     VStack(spacing: 20) {
-                        currentScaleCard
-                        presetSection
-                        customSection
+                        measurementCard
+                        howItWorksCard
+                        observedCard
                         packSection
                     }
                     .padding(.horizontal, 20)
@@ -28,100 +35,68 @@ struct OddsScreen: View {
                 }
             }
             .navigationTitle("Odds")
-            .navigationBarTitleDisplayMode(.large)
             .sheet(item: $paywallFeature) { feature in
-                PaywallView(highlight: feature)
-                    .environmentObject(store)
+                PaywallView(highlight: feature).environmentObject(store)
             }
         }
     }
 
-    // MARK: - Current
+    // MARK: - The measurement
 
-    private var currentScaleCard: some View {
-        let scale = preferences.activeScale(isPro: isPro)
+    private var measurementCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Chance of yes")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.55))
+                .textCase(.uppercase)
+                .kerning(0.8)
 
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("In use")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.55))
-                Spacer()
-                Text(preferences.activeScaleName(isPro: isPro))
-                    .font(.subheadline.weight(.semibold))
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Text(odds.chanceDescription(of: .affirmative))
+                    .font(.system(size: 40, weight: .bold, design: .rounded).monospacedDigit())
+                Text("\(odds.percentages.affirmative)%")
+                    .font(.title3.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(Theme.tint(for: .affirmative))
             }
-            ScaleWeightBar(scale: scale)
-            Text("Out of every 100 questions, the orb says yes about \(scale.displayPercentages.affirmative) times.")
+
+            OddsBar(odds: odds)
+
+            Text("Yes : Maybe : No is \(odds.ratioDescription), counted from the \(odds.total) answers the orb is drawing from right now.")
                 .font(.footnote)
-                .foregroundStyle(.white.opacity(0.65))
+                .foregroundStyle(.white.opacity(0.7))
                 .fixedSize(horizontal: false, vertical: true)
-        }
-        .cardStyle()
-    }
-
-    // MARK: - Presets
-
-    private var presetSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Presets")
-                .font(.headline)
-
-            ForEach(ScalePreset.all) { preset in
-                presetRow(preset)
-            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardStyle()
     }
 
-    private func presetRow(_ preset: ScalePreset) -> some View {
-        let locked = preset.requiresPro && !isPro
-        let isSelected = !preferences.usingCustomScale && preferences.presetID == preset.id && !locked
+    private var howItWorksCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Why you can't change it")
+                .font(.headline)
 
-        return Button {
-            guard !locked else {
-                paywallFeature = .customProbability
-                return
-            }
-            Feedback.selection(enabled: preferences.hapticsEnabled)
-            preferences.usingCustomScale = false
-            preferences.presetID = preset.id
-        } label: {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: locked ? "lock.fill" : (isSelected ? "checkmark.circle.fill" : "circle"))
-                    .foregroundStyle(locked ? .white.opacity(0.4) : (isSelected ? Theme.accent : .white.opacity(0.4)))
-                    .padding(.top, 2)
+            Text("""
+                The orb picks one answer at random from the pool, so the chance of a yes is simply how many answers say yes. There's no separate dial, which means there's nothing to turn — not by you, and not by us.
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(preset.name).font(.subheadline.weight(.semibold))
-                    Text(preset.detail)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.6))
-                        .fixedSize(horizontal: false, vertical: true)
-                    ScaleWeightBar(scale: preset.scale, height: 8, showsLabels: false)
-                        .opacity(locked ? 0.45 : 1)
-                }
-            }
-            .contentShape(Rectangle())
+                Every pack ships with the same shape: 10 yes, 5 maybe, 5 no. Turning packs on changes what the orb says. It cannot change what it decides.
+                """)
+                .font(.footnote)
+                .foregroundStyle(.white.opacity(0.7))
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardStyle()
     }
 
-    // MARK: - Custom
+    // MARK: - Observed
 
-    private var customSection: some View {
+    @ViewBuilder
+    private var observedCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Custom scale").font(.headline)
+                Text("Your results").font(.headline)
                 Spacer()
-                if isPro {
-                    Toggle("", isOn: Binding(
-                        get: { preferences.usingCustomScale },
-                        set: { preferences.usingCustomScale = $0 }
-                    ))
-                    .labelsHidden()
-                } else {
+                if !isPro {
                     Label("Pro", systemImage: "lock.fill")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.6))
@@ -129,81 +104,27 @@ struct OddsScreen: View {
             }
 
             if isPro {
-                ScaleWeightBar(scale: preferences.customScale)
-
-                weightSlider(
-                    title: "Yes",
-                    sentiment: .affirmative,
-                    value: Binding(
-                        get: { preferences.customScale.affirmative * 100 },
-                        set: { updateCustom(affirmative: $0) }
-                    )
-                )
-                weightSlider(
-                    title: "Maybe",
-                    sentiment: .noncommittal,
-                    value: Binding(
-                        get: { preferences.customScale.noncommittal * 100 },
-                        set: { updateCustom(noncommittal: $0) }
-                    )
-                )
-                weightSlider(
-                    title: "No",
-                    sentiment: .negative,
-                    value: Binding(
-                        get: { preferences.customScale.negative * 100 },
-                        set: { updateCustom(negative: $0) }
-                    )
-                )
-
-                Text("Weights are relative — they're rebalanced to 100% as you drag.")
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.5))
+                ObservedComparison(expected: odds, observed: history.observedOdds)
             } else {
+                Text("Pro tracks every reading and shows how your actual results compare with the odds above.")
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .fixedSize(horizontal: false, vertical: true)
+
                 Button {
-                    paywallFeature = .customProbability
+                    paywallFeature = .insights
                 } label: {
-                    Label("Set your own odds with Pro", systemImage: "slider.horizontal.3")
+                    Label("See your results with Pro", systemImage: "chart.bar.fill")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                 }
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Theme.accent.opacity(0.9))
-                )
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.accent.opacity(0.9)))
                 .foregroundStyle(.white)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardStyle()
-    }
-
-    private func weightSlider(title: String, sentiment: Sentiment, value: Binding<Double>) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(title).font(.subheadline)
-                Spacer()
-                Text("\(Int(value.wrappedValue.rounded()))%")
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.7))
-            }
-            Slider(value: value, in: 0...100, step: 1)
-                .tint(Theme.tint(for: sentiment))
-                .accessibilityLabel("\(title) weight")
-        }
-    }
-
-    /// Slider edits move one weight and leave the other two untouched; the
-    /// scale renormalises, so the displayed percentages settle on their own.
-    private func updateCustom(affirmative: Double? = nil, noncommittal: Double? = nil, negative: Double? = nil) {
-        let current = preferences.customScale
-        preferences.customScale = ProbabilityScale(
-            affirmative: affirmative ?? current.affirmative * 100,
-            noncommittal: noncommittal ?? current.noncommittal * 100,
-            negative: negative ?? current.negative * 100
-        )
-        preferences.usingCustomScale = true
     }
 
     // MARK: - Packs
@@ -212,9 +133,10 @@ struct OddsScreen: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Answer packs")
                 .font(.headline)
-            Text("Packs change how the orb talks, never how it decides.")
+            Text("Each pack is 20 answers in the same 10 / 5 / 5 shape, so switching them changes the orb's vocabulary and nothing else.")
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.6))
+                .fixedSize(horizontal: false, vertical: true)
 
             ForEach(AnswerCatalog.all) { pack in
                 packRow(pack)

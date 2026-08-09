@@ -121,29 +121,9 @@ final class HistoryStore: ObservableObject {
 
     // MARK: - Insights
 
-    struct Insights {
-        var total: Int
-        var counts: [Sentiment: Int]
-        var averageLikelihood: Double
-
-        func share(of sentiment: Sentiment) -> Double {
-            guard total > 0 else { return 0 }
-            return Double(counts[sentiment, default: 0]) / Double(total)
-        }
-    }
-
-    var insights: Insights {
-        var counts: [Sentiment: Int] = [:]
-        var likelihoodTotal = 0.0
-        for entry in entries {
-            counts[entry.prediction.sentiment, default: 0] += 1
-            likelihoodTotal += entry.prediction.likelihood
-        }
-        return Insights(
-            total: entries.count,
-            counts: counts,
-            averageLikelihood: entries.isEmpty ? 0 : likelihoodTotal / Double(entries.count)
-        )
+    /// What the user actually got, for comparison against the designed odds.
+    var observedOdds: ObservedOdds {
+        ObservedOdds(sentiments: entries.map(\.prediction.sentiment))
     }
 
     // MARK: - Persistence

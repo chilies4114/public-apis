@@ -17,9 +17,9 @@ public struct Answer: Identifiable, Hashable, Codable, Sendable {
 
 /// A themed collection of answers.
 ///
-/// Packs never change the odds — the probability scale decides the verdict, the
-/// pack only decides the wording. That separation is what keeps a Pro pack from
-/// quietly being "luckier" than the free one.
+/// Packs never change the odds. Every pack ships with the same 10 / 5 / 5
+/// composition, so growing the pool leaves the ratio at 2 : 1 : 1 and a Pro
+/// pack cannot be quietly "luckier" than the free one.
 public struct AnswerPack: Identifiable, Hashable, Sendable {
     public let id: String
     public let name: String
@@ -41,9 +41,22 @@ public struct AnswerPack: Identifiable, Hashable, Sendable {
         answers.filter { $0.sentiment == sentiment }
     }
 
-    /// True when the pack can serve every verdict the scale might produce.
+    /// True when the pack can serve every verdict.
     public var isComplete: Bool {
         Sentiment.allCases.allSatisfy { !answers(for: $0).isEmpty }
+    }
+
+    /// The verdict composition of this pack.
+    ///
+    /// Every shipped pack must measure identically to `OddsMeasurement.perPack`
+    /// — that identity is what makes the odds independent of which packs are
+    /// switched on, and it is enforced by test rather than by convention.
+    public var measurement: OddsMeasurement {
+        OddsMeasurement(
+            affirmative: answers(for: .affirmative).count,
+            noncommittal: answers(for: .noncommittal).count,
+            negative: answers(for: .negative).count
+        )
     }
 }
 
@@ -131,7 +144,9 @@ public enum AnswerCatalog {
                 "Gravity itself is on your side.",
                 "This one was always going to happen.",
                 "The constellations are unanimous.",
-                "Yes — and sooner than you think."
+                "Yes — and sooner than you think.",
+                "The dark between the stars agrees.",
+                "Yes. The long arc bends your way."
             ],
             noncommittal: [
                 "The signal is still crossing the void.",
@@ -166,7 +181,9 @@ public enum AnswerCatalog {
                 "Statistically? Yes. Emotionally? Also yes.",
                 "Yes, but don't make it weird.",
                 "Correct, for once.",
-                "Yes. Try not to squander it."
+                "Yes. Try not to squander it.",
+                "Yes, and I'm as surprised as you are.",
+                "Yes. Don't overthink it, for once."
             ],
             noncommittal: [
                 "I'm going to need more context, and so do you.",
@@ -201,7 +218,9 @@ public enum AnswerCatalog {
                 "Fortune favours the one who asked.",
                 "Say yes, and the rest will arrange itself.",
                 "You will look back on this kindly.",
-                "The answer is yes, and it is patient."
+                "The answer is yes, and it is patient.",
+                "Yes — quietly, and then all at once.",
+                "The answer arrived before the question did."
             ],
             noncommittal: [
                 "A question asked too early answers itself too late.",
@@ -236,7 +255,9 @@ public enum AnswerCatalog {
                 "Yes — strong upside, acceptable risk.",
                 "Consensus reached. It's a go.",
                 "This clears the bar comfortably.",
-                "Recommend proceeding at pace."
+                "Recommend proceeding at pace.",
+                "Unanimous. Move to execution.",
+                "Yes. Budget approved, no caveats."
             ],
             noncommittal: [
                 "Tabled pending further review.",
@@ -271,7 +292,9 @@ public enum AnswerCatalog {
                 "The tide turns for ye today.",
                 "Every gull says go.",
                 "Aye. Weigh anchor.",
-                "The compass has made up its mind."
+                "The compass has made up its mind.",
+                "Aye. The sea decided this one already.",
+                "Aye — that wind is yours to take."
             ],
             noncommittal: [
                 "Fog on the water. Ask at first light.",

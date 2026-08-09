@@ -8,7 +8,7 @@ attempt the subscription screen is presented.
 
 HOW TO TEST THE SUBSCRIPTION
 The paywall is reachable at any time via "Go Pro" in the top-right of the Ask
-tab, or by tapping any locked preset on the Odds tab. Three products are
+tab, or by tapping any locked answer pack on the Odds tab. Three products are
 offered: a monthly subscription, a yearly subscription with a 7-day free trial,
 and a one-time lifetime unlock. Price, billing period, renewal terms and links
 to the Terms of Use and Privacy Policy are all shown on the same screen as the
@@ -23,6 +23,13 @@ and a reinstall restores it without any user action.
 DATA COLLECTION
 None. Questions, readings and notes are stored only on the device. There is no
 analytics SDK, no network calls other than StoreKit, and no tracking.
+
+ODDS
+The chance of each verdict is a count of the answer pool, not a setting. The
+orb draws one answer uniformly at random from the 20 answers in each enabled
+pack, all of which are 10 yes / 5 maybe / 5 no. The Odds tab displays that
+measurement; there is no control anywhere in the app that alters it, and no
+paid feature that does either.
 
 SAFETY SCREENING
 Before any answer is drawn, the question is screened on device against a list

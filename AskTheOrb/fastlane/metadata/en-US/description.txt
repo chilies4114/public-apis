@@ -1,6 +1,6 @@
-The fortune-telling toy you grew up with, with one honest twist: you can see the odds, and you can change them.
+The fortune-telling toy you grew up with, with one honest twist: it shows you the exact odds behind every answer — and nobody, including us, can change them.
 
-Ask a yes-or-no question, shake your phone, and the orb answers. Every reading also shows you the number behind it — the actual chance of yes that produced that answer — so you always know whether the orb was leaning your way or not.
+Ask a yes-or-no question, shake your phone, and the orb answers. Every reading shows the real chance it was drawn on: 10 in 20. Not an estimate — a count of the answers in the pool.
 
 THE CLASSIC TWENTY
 All twenty original answers, drawn on the original odds: ten yes, five maybe, five no. Shake to ask, or tap the orb. Haptics and sound land with the reveal.
@@ -8,24 +8,23 @@ All twenty original answers, drawn on the original odds: ten yes, five maybe, fi
 THE ORB REMEMBERS
 Ask the same question twice in a day and you'll get the same answer. No re-rolling until you like what you hear — unless you deliberately ask again.
 
-SEE THE ODDS
-Every reading comes with a percentage and a scale showing where it landed between no, maybe and yes. Nothing is hidden.
+THE ODDS ARE A MEASUREMENT, NOT A SETTING
+The orb picks one answer at random from its pool, so the chance of a yes is simply how many answers say yes: 10 of 20. There is no dial to turn. Every pack has the same 10 / 5 / 5 shape, so buying one changes what the orb says and provably not what it decides.
 
 FREE FOREVER
 • Five questions a day
 • All twenty classic answers
-• The classic odds
+• The same odds as everyone else — 10 in 20
 • Your three most recent readings
 
 ORB PRO
 • Unlimited questions
 • Five more answer packs: Cosmic, Deadpan, Fortune Cookie, Boardroom and High Seas
-• Tune the odds yourself, or pick a preset — Sunny Side, Realist, Coin Flip, Cosmic Fog, Hard Truth
 • Ask again to re-roll any question
 • Your full history, searchable, with your own notes
-• Insights showing how the orb has actually been leaning
+• Your results measured against the odds, with the sample size that makes them meaningful
 
-Answer packs change how the orb talks, never how it decides. The odds you set are the odds you get.
+Answer packs change how the orb talks, never how it decides. The odds you see are the odds you get.
 
 Pro is available as a monthly or yearly subscription, or as a one-time lifetime unlock.
 
@@ -33,4 +32,4 @@ SOME QUESTIONS IT WON'T ANSWER
 Questions about self-harm, violence, abuse or medical care get support resources instead of a random verdict. That behaviour is built in and cannot be switched off.
 
 A NOTE ON WHAT THIS IS
-Ask the Orb is a toy. Answers are drawn at random from the odds you choose. It cannot predict the future, and nothing it says is medical, legal, financial or psychological advice. A disclaimer to that effect is shown on first launch and stays available in Settings.
+Ask the Orb is a toy. Answers are drawn at random from a fixed pool. It cannot predict the future, and nothing it says is medical, legal, financial or psychological advice. A disclaimer to that effect is shown on first launch and stays available in Settings.

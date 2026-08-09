@@ -4,6 +4,8 @@ import Foundation
 ///
 /// The answer text is copied in rather than referenced by ID so history entries
 /// keep reading correctly even if the user later loses access to a Pro pack.
+/// The odds measured at the time of the draw are stored alongside it, so a
+/// reading always carries the true chance that produced it.
 public struct Prediction: Identifiable, Hashable, Codable, Sendable {
     public let id: UUID
     public let question: String
@@ -11,9 +13,8 @@ public struct Prediction: Identifiable, Hashable, Codable, Sendable {
     public let sentiment: Sentiment
     public let packID: String
     public let packName: String
-    /// Probability of a positive outcome, 0...1. Always inside `sentiment.likelihoodBand`.
-    public let likelihood: Double
-    public let scale: ProbabilityScale
+    /// The composition of the pool this answer was drawn from.
+    public let odds: OddsMeasurement
     public let date: Date
     /// Which re-ask this was for the same question on the same day. 0 == first.
     public let variant: Int
@@ -25,8 +26,7 @@ public struct Prediction: Identifiable, Hashable, Codable, Sendable {
         sentiment: Sentiment,
         packID: String,
         packName: String,
-        likelihood: Double,
-        scale: ProbabilityScale,
+        odds: OddsMeasurement,
         date: Date,
         variant: Int
     ) {
@@ -36,23 +36,28 @@ public struct Prediction: Identifiable, Hashable, Codable, Sendable {
         self.sentiment = sentiment
         self.packID = packID
         self.packName = packName
-        self.likelihood = likelihood
-        self.scale = scale
+        self.odds = odds
         self.date = date
         self.variant = variant
     }
 
-    /// The headline number: "68% chance of yes".
-    public var likelihoodPercent: Int {
-        Int((min(max(likelihood, 0), 1) * 100).rounded())
+    /// "10 in 20" — the chance this verdict had before it was drawn.
+    public var chanceDescription: String {
+        odds.chanceDescription(of: sentiment)
     }
 
-    /// Copy for VoiceOver, which should never have to read a bare percentage.
+    /// The chance of a yes in the pool this was drawn from, as a percentage.
+    public var yesChancePercent: Int {
+        odds.percentages.affirmative
+    }
+
+    /// Copy for VoiceOver, which should never have to read a bare ratio.
     public var accessibilityDescription: String {
         let verdict = sentiment.displayName
+        let chance = "\(verdict) had a \(chanceDescription) chance."
         if question.isEmpty {
-            return "\(verdict). \(answerText) \(likelihoodPercent) percent chance of yes."
+            return "\(verdict). \(answerText) \(chance)"
         }
-        return "You asked: \(question). \(verdict). \(answerText) \(likelihoodPercent) percent chance of yes."
+        return "You asked: \(question). \(verdict). \(answerText) \(chance)"
     }
 }

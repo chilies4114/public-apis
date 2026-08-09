@@ -40,11 +40,12 @@ final class AskFlowUITests: XCTestCase {
         let card = app.otherElements[A11yID.readingCard]
         XCTAssertTrue(card.waitForExistence(timeout: 6), "no reading appeared after asking")
 
-        // The reading must state a verdict and a percentage, not just a phrase.
-        let percentage = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS[c] 'chance of yes'")
+        // The reading must state the real chance it was drawn on, not just a
+        // phrase — "10 in 20", counted from the pool.
+        let chance = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS[c] ' in 20'")
         ).firstMatch
-        XCTAssertTrue(percentage.waitForExistence(timeout: 3))
+        XCTAssertTrue(chance.waitForExistence(timeout: 3))
     }
 
     func testSameQuestionRepeatsTheSameAnswerWithoutSpendingAnAsk() {
@@ -184,16 +185,26 @@ final class AskFlowUITests: XCTestCase {
 
     // MARK: - Gating
 
-    func testProPresetsAreLockedForFreeUsers() {
+    func testOddsAreShownAsAMeasurementWithNoWayToChangeThem() {
         app.tabBars.buttons["Odds"].tap()
 
-        let sunny = app.staticTexts["Sunny Side"]
-        XCTAssertTrue(sunny.waitForExistence(timeout: 5))
-        sunny.tap()
+        XCTAssertTrue(app.staticTexts["10 in 20"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Why you can't change it"].exists)
+
+        // Nothing on this screen may adjust the odds.
+        XCTAssertEqual(app.sliders.count, 0, "the odds must not be adjustable")
+    }
+
+    func testProPacksAreLockedForFreeUsers() {
+        app.tabBars.buttons["Odds"].tap()
+
+        let cosmic = app.staticTexts["Cosmic"]
+        XCTAssertTrue(cosmic.waitForExistence(timeout: 5))
+        cosmic.tap()
 
         XCTAssertTrue(
             app.otherElements[A11yID.paywall].waitForExistence(timeout: 5),
-            "tapping a Pro preset should present the paywall"
+            "tapping a Pro pack should present the paywall"
         )
     }
 

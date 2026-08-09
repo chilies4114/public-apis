@@ -4,6 +4,7 @@ import OrbCore
 @MainActor
 struct HistoryScreen: View {
     @EnvironmentObject private var store: SubscriptionManager
+    @EnvironmentObject private var preferences: Preferences
     @EnvironmentObject private var history: HistoryStore
 
     @State private var paywallFeature: ProFeature?
@@ -85,47 +86,16 @@ struct HistoryScreen: View {
     }
 
     private var insightsCard: some View {
-        let insights = history.insights
-
-        return VStack(alignment: .leading, spacing: 12) {
-            Text("Insights")
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Your results")
                 .font(.headline)
-
-            HStack(spacing: 18) {
-                statistic("Readings", "\(insights.total)")
-                statistic("Avg. chance", "\(Int((insights.averageLikelihood * 100).rounded()))%")
-                statistic("Yes rate", "\(Int((insights.share(of: .affirmative) * 100).rounded()))%")
-            }
-
-            ForEach(Sentiment.allCases.reversed(), id: \.self) { sentiment in
-                HStack(spacing: 10) {
-                    Circle().fill(Theme.tint(for: sentiment)).frame(width: 8, height: 8)
-                    Text(sentiment.displayName)
-                        .font(.caption)
-                        .frame(width: 46, alignment: .leading)
-                    GeometryReader { proxy in
-                        Capsule()
-                            .fill(Theme.tint(for: sentiment).opacity(0.8))
-                            .frame(width: max(2, proxy.size.width * insights.share(of: sentiment)))
-                    }
-                    .frame(height: 8)
-                    Text("\(insights.counts[sentiment, default: 0])")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.white.opacity(0.7))
-                        .frame(width: 34, alignment: .trailing)
-                }
-            }
+            ObservedComparison(
+                expected: preferences.measuredOdds(isPro: true),
+                observed: history.observedOdds
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .cardStyle()
-    }
-
-    private func statistic(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(value).font(.title3.weight(.bold).monospacedDigit())
-            Text(label).font(.caption2).foregroundStyle(.white.opacity(0.6))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func entryCard(_ entry: HistoryStore.Entry) -> some View {
@@ -147,10 +117,10 @@ struct HistoryScreen: View {
                 .foregroundStyle(Theme.tint(for: prediction.sentiment))
                 .fixedSize(horizontal: false, vertical: true)
 
-            LikelihoodBar(likelihood: prediction.likelihood, sentiment: prediction.sentiment, height: 8)
+            OddsBar(odds: prediction.odds, emphasising: prediction.sentiment, height: 8, showsLabels: false)
 
             HStack {
-                Text("\(prediction.likelihoodPercent)% chance of yes · \(prediction.packName)")
+                Text("\(prediction.chanceDescription) chance · \(prediction.packName)")
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.5))
                 Spacer()
@@ -235,7 +205,7 @@ private struct NoteEditor: View {
                 }
                 Section("Reading") {
                     Text(entry.prediction.answerText)
-                    Text("\(entry.prediction.likelihoodPercent)% chance of yes")
+                    Text("\(entry.prediction.chanceDescription) chance")
                         .foregroundStyle(.secondary)
                 }
             }
