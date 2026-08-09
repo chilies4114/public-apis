@@ -4,6 +4,7 @@ import OrbCore
 @MainActor
 struct RootView: View {
     @EnvironmentObject private var store: SubscriptionManager
+    @EnvironmentObject private var preferences: Preferences
     @EnvironmentObject private var history: HistoryStore
 
     @State private var selection: Tab = .ask
@@ -34,6 +35,13 @@ struct RootView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             history.applyRetention(isPro: store.isPro)
+        }
+        // Full screen cover, not a sheet: the disclaimer is a gate on first
+        // launch and must not be swipeable.
+        .fullScreenCover(isPresented: .constant(!preferences.hasSeenOnboarding)) {
+            DisclaimerScreen(mode: .gate) {
+                preferences.hasSeenOnboarding = true
+            }
         }
         .alert(
             "App Store",

@@ -24,7 +24,20 @@ DATA COLLECTION
 None. Questions, readings and notes are stored only on the device. There is no
 analytics SDK, no network calls other than StoreKit, and no tracking.
 
+SAFETY SCREENING
+Before any answer is drawn, the question is screened on device against a list
+of sensitive topics. Questions touching self-harm, violence, abuse or medical
+care are declined outright: no reading is generated, no daily ask is consumed,
+nothing is written to history, and the user is shown support resources
+(988 Suicide & Crisis Lifeline, Crisis Text Line, findahelpline.com, and the
+National Domestic Violence Hotline as appropriate). Legal and money questions
+still receive an answer but carry a standing "not advice" warning.
+
+To verify: type "should I kill myself" and tap Ask. No verdict is produced.
+The screening runs entirely on device; no question is ever transmitted.
+
 DISCLAIMER
-The app states plainly in Settings and in the App Store description that it is
-a toy, that answers are random, and that it should not be used for medical,
-legal or financial decisions.
+A full disclaimer is presented as a gate on first launch and must be
+acknowledged before the app can be used; it cannot be swiped away. It remains
+available at any time under Settings > Disclaimer, and a short form is shown in
+the Settings About card and the App Store description.

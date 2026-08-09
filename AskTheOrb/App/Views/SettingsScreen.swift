@@ -11,6 +11,7 @@ struct SettingsScreen: View {
 
     @State private var paywallFeature: ProFeature?
     @State private var showManageSubscriptions = false
+    @State private var showDisclaimer = false
 
     #if DEBUG
     @State private var passphrase = ""
@@ -42,6 +43,9 @@ struct SettingsScreen: View {
                 PaywallView(highlight: feature).environmentObject(store)
             }
             .manageSubscriptionsSheet(isPresented: $showManageSubscriptions)
+            .sheet(isPresented: $showDisclaimer) {
+                DisclaimerScreen(mode: .reference)
+            }
         }
     }
 
@@ -127,13 +131,14 @@ struct SettingsScreen: View {
             Text("About")
                 .font(.headline)
 
-            Text("Ask the Orb is a toy. Answers are drawn at random from the odds you choose — it can't actually see the future, and nothing it says should be used for medical, legal, or financial decisions.")
+            Text(Disclaimer.short)
                 .font(.footnote)
                 .foregroundStyle(.white.opacity(0.7))
                 .fixedSize(horizontal: false, vertical: true)
 
             Divider().overlay(.white.opacity(0.1))
 
+            Button("Disclaimer") { showDisclaimer = true }
             Button("Support") { openURL(StoreConfig.supportURL) }
             Button("Privacy Policy") { openURL(StoreConfig.privacyURL) }
             Button("Terms of Use") { openURL(StoreConfig.termsURL) }

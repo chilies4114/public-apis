@@ -14,6 +14,16 @@ final class AskFlowUITests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments = ["-AskTheOrbResetState"]
         app.launch()
+        dismissDisclaimerIfPresent()
+    }
+
+    /// A reset launch always lands on the first-run disclaimer gate, which has
+    /// no way past it but the button — that is the point of it.
+    private func dismissDisclaimerIfPresent() {
+        let acknowledge = app.buttons["I understand"]
+        if acknowledge.waitForExistence(timeout: 5) {
+            acknowledge.tap()
+        }
     }
 
     // MARK: - Core loop
@@ -100,6 +110,76 @@ final class AskFlowUITests: XCTestCase {
         XCTAssertTrue(renewal.exists)
         XCTAssertTrue(app.links["Terms of Use"].exists)
         XCTAssertTrue(app.links["Privacy Policy"].exists)
+    }
+
+    // MARK: - Safety screening
+
+    /// The single most important behaviour in the app: a question about
+    /// self-harm must never receive a random verdict.
+    func testSelfHarmQuestionGetsSupportNotAReading() {
+        let field = app.textFields[A11yID.questionField]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText("should i kill myself")
+
+        let quotaBefore = app.staticTexts[A11yID.quotaLabel].label
+        app.buttons[A11yID.askButton].tap()
+
+        XCTAssertTrue(
+            app.staticTexts["This one deserves a real person"].waitForExistence(timeout: 4),
+            "no support notice appeared"
+        )
+        XCTAssertTrue(app.buttons["988 Suicide & Crisis Lifeline"].exists)
+
+        // No reading, and no ask consumed.
+        XCTAssertFalse(app.otherElements[A11yID.readingCard].exists)
+        XCTAssertEqual(app.staticTexts[A11yID.quotaLabel].label, quotaBefore)
+    }
+
+    func testDeclinedQuestionIsNotRecordedInHistory() {
+        let field = app.textFields[A11yID.questionField]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText("should i hurt someone")
+        app.buttons[A11yID.askButton].tap()
+        XCTAssertTrue(app.staticTexts["The orb won't answer this"].waitForExistence(timeout: 4))
+
+        app.tabBars.buttons["History"].tap()
+        XCTAssertTrue(app.staticTexts["No readings yet"].waitForExistence(timeout: 4))
+    }
+
+    func testMoneyQuestionStillAnswersButCarriesAWarning() {
+        let field = app.textFields[A11yID.questionField]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText("should i invest my life savings")
+        app.buttons[A11yID.askButton].tap()
+
+        XCTAssertTrue(app.otherElements[A11yID.readingCard].waitForExistence(timeout: 6))
+        XCTAssertTrue(app.staticTexts["Not financial advice"].exists)
+    }
+
+    func testOrdinaryQuestionIsNeverScreened() {
+        let field = app.textFields[A11yID.questionField]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap()
+        field.typeText("will i kill it at the interview")
+        app.buttons[A11yID.askButton].tap()
+
+        XCTAssertTrue(app.otherElements[A11yID.readingCard].waitForExistence(timeout: 6))
+        XCTAssertFalse(app.staticTexts["The orb won't answer this"].exists)
+    }
+
+    // MARK: - Disclaimer
+
+    func testDisclaimerGateIsShownOnFirstLaunchAndNotAgain() {
+        // setUp already dismissed it. Relaunching without a reset must not
+        // show it a second time.
+        app.terminate()
+        let relaunched = XCUIApplication()
+        relaunched.launch()
+        XCTAssertTrue(relaunched.textFields[A11yID.questionField].waitForExistence(timeout: 5))
+        XCTAssertFalse(relaunched.buttons["I understand"].exists)
     }
 
     // MARK: - Gating

@@ -29,5 +29,8 @@ Answer packs change how the orb talks, never how it decides. The odds you set ar
 
 Pro is available as a monthly or yearly subscription, or as a one-time lifetime unlock.
 
+SOME QUESTIONS IT WON'T ANSWER
+Questions about self-harm, violence, abuse or medical care get support resources instead of a random verdict. That behaviour is built in and cannot be switched off.
+
 A NOTE ON WHAT THIS IS
-Ask the Orb is a toy. Answers are drawn at random from the odds you choose. It cannot predict the future, and nothing it says should be used to make medical, legal, or financial decisions.
+Ask the Orb is a toy. Answers are drawn at random from the odds you choose. It cannot predict the future, and nothing it says is medical, legal, financial or psychological advice. A disclaimer to that effect is shown on first launch and stays available in Settings.

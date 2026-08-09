@@ -24,6 +24,11 @@ struct AskScreen: View {
     @State private var paywallFeature: ProFeature?
     @State private var isReplay = false
 
+    /// Set when the question touches a topic the orb shouldn't answer with a
+    /// coin flip. A `.decline` replaces the reading entirely; a `.caution`
+    /// rides alongside it.
+    @State private var screening: Screening?
+
     @FocusState private var questionFocused: Bool
 
     private let oracle = Oracle()
@@ -40,6 +45,7 @@ struct AskScreen: View {
                         header
                         orb
                         actionArea
+                        safetyNotice
                         readingDetail
                     }
                     .padding(.horizontal, 20)
@@ -176,14 +182,39 @@ struct AskScreen: View {
     }
 
     private var canOfferReroll: Bool {
-        phase == .revealed && !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        phase == .revealed
+            && screening?.outcome != .decline
+            && !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    // MARK: - Safety
+
+    @ViewBuilder
+    private var safetyNotice: some View {
+        if let screening {
+            switch screening.outcome {
+            case .decline:
+                SafetyNoticeView(screening: screening) {
+                    question = ""
+                    self.screening = nil
+                    questionFocused = true
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+
+            case .caution:
+                if phase == .revealed {
+                    CautionBanner(screening: screening)
+                        .transition(.opacity)
+                }
+            }
+        }
     }
 
     // MARK: - Reading detail
 
     @ViewBuilder
     private var readingDetail: some View {
-        if phase == .revealed, let prediction {
+        if phase == .revealed, screening?.outcome != .decline, let prediction {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Label(prediction.sentiment.displayName, systemImage: prediction.sentiment.symbolName)
@@ -223,6 +254,11 @@ struct AskScreen: View {
 
         let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)
 
+        // Screening runs before everything else — before the quota check, the
+        // replay lookup and the draw. A declined question must never produce a
+        // reading, cost an ask, or land in history.
+        guard passesScreening(trimmed) else { return }
+
         // A question already answered today replays for free rather than
         // re-rolling, so the answer is stable and the quota isn't burned.
         if !trimmed.isEmpty, let existing = history.todaysEntry(for: trimmed) {
@@ -240,6 +276,25 @@ struct AskScreen: View {
         draw(question: trimmed, variant: trimmed.isEmpty ? nextBlankVariant() : 0)
     }
 
+    /// Applies the topic screener. Returns false when the orb should stay quiet.
+    private func passesScreening(_ trimmed: String) -> Bool {
+        let result = TopicScreener.screen(trimmed)
+
+        withAnimation(.easeInOut(duration: 0.25)) {
+            screening = result
+        }
+
+        guard result?.outcome == .decline else { return true }
+
+        revealTask?.cancel()
+        prediction = nil
+        withAnimation(.easeInOut(duration: 0.25)) {
+            phase = .idle
+        }
+        Feedback.blocked(enabled: preferences.hapticsEnabled)
+        return false
+    }
+
     private func askAgain() {
         guard isPro else {
             Feedback.blocked(enabled: preferences.hapticsEnabled)
@@ -249,6 +304,7 @@ struct AskScreen: View {
         guard phase != .thinking else { return }
 
         let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard passesScreening(trimmed) else { return }
         let nextVariant = (history.latestVariant(for: trimmed) ?? 0) + 1
 
         preferences.consumeAsk(isPro: true)
