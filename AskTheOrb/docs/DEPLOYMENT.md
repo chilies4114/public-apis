@@ -202,6 +202,58 @@ The last two are the ones App Review actually tests.
 
 ---
 
+## 7b. Getting Pro for free on your own device
+
+You will want every paid feature unlocked on your own phone, permanently,
+without paying yourself. There are four ways, and only three of them are safe.
+
+**Simulator — free, instant.** The scheme attaches
+`Configuration/Products.storekit`, so every purchase completes locally against
+that file. Nothing is charged and no account is involved. This is the fastest
+way to exercise the paywall.
+
+**TestFlight — free, on a real device.** This is the one people miss:
+**in-app purchases in TestFlight builds are always free.** TestFlight uses the
+sandbox environment, so tapping "Start Free Trial" or "Unlock Pro Forever"
+completes without charging anything, on your actual phone, with real StoreKit.
+Sandbox subscriptions also renew on an accelerated clock (a one-year
+subscription renews every hour), which is how you test expiry without waiting.
+
+**Offer codes — free, permanent, after launch.** Once the app is live, App
+Store Connect gives you subscription **offer codes**: 1,000 per app per
+quarter, redeemable for a free period of any length you configure, up to and
+including a year at a time. Generate one for yourself and redeem it in the App
+Store. This is Apple's sanctioned way to give someone free access to a paid
+subscription and it leaves no trace in the shipping binary.
+
+**Debug passphrase unlock — free, but only in Debug builds.** Settings gains a
+**Developer** section when the app is compiled in Debug. Enter the passphrase
+and every Pro feature unlocks on that device.
+
+The default passphrase is `orb-owner`. Change it by putting a new SHA-256 hash
+into `App/Store/OwnerUnlock.swift`:
+
+```bash
+echo -n 'your new passphrase' | shasum -a 256
+```
+
+### Why the unlock is Debug-only
+
+It would be easy to make that passphrase work in the shipping app too. Don't.
+
+App Review **guideline 2.3.1** prohibits hidden or undocumented features, and
+reviewers do look for them. A release binary containing a secret path to the
+paid tier is grounds for rejection, and repeated attempts to slip one past
+review put the developer account itself at risk. It also creates a real
+problem: anyone who finds the passphrase — in a decompiled binary, in this
+public repository, over your shoulder — gets Pro for nothing.
+
+`OwnerUnlock.swift` is wrapped entirely in `#if DEBUG`, so the App Store build
+has no unlock to find and the hash in the source is worth nothing to anyone.
+If you want permanent free access on a shipping build, use an offer code.
+
+---
+
 ## 8. Submit for review
 
 Upload the metadata and the build together:

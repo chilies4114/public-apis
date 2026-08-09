@@ -26,10 +26,40 @@ final class SubscriptionManager: ObservableObject {
     @Published private(set) var isRestoring = false
     @Published var alertMessage: String?
 
-    /// True when any Pro product is currently entitled.
-    var isPro: Bool { !entitledProductIDs.isEmpty }
+    /// True when the App Store says a Pro product is currently entitled.
+    var isEntitled: Bool { !entitledProductIDs.isEmpty }
+
+    /// What the app gates features on.
+    ///
+    /// In Release this is exactly `isEntitled`. In Debug it also honours the
+    /// developer's passphrase unlock, which is compiled out of shipping builds
+    /// entirely — see OwnerUnlock.swift.
+    var isPro: Bool {
+        #if DEBUG
+        return isEntitled || ownerUnlocked
+        #else
+        return isEntitled
+        #endif
+    }
 
     var hasLifetime: Bool { entitledProductIDs.contains(StoreConfig.lifetimeID) }
+
+    #if DEBUG
+    /// Published so that unlocking re-renders every gated view immediately.
+    @Published private(set) var ownerUnlocked: Bool = OwnerUnlock.isUnlocked
+
+    @discardableResult
+    func unlockAsOwner(passphrase: String) -> Bool {
+        guard OwnerUnlock.unlock(with: passphrase) else { return false }
+        ownerUnlocked = true
+        return true
+    }
+
+    func relockOwnerAccess() {
+        OwnerUnlock.relock()
+        ownerUnlocked = false
+    }
+    #endif
 
     /// Retained for the lifetime of the app; the listener must outlive any one
     /// screen so purchases made outside the app (Ask to Buy approvals, family

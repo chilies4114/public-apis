@@ -51,7 +51,12 @@ draw.
 | Insights | — | ✅ |
 
 Pro is sold as a monthly subscription, a yearly subscription with a 7-day free
-trial, or a one-time lifetime unlock. Entitlement is read from
+trial, or a one-time lifetime unlock. To use the paid tier yourself without
+paying: TestFlight purchases are free (they run in the sandbox), offer codes
+give permanent free access on a live build, and Debug builds gain a passphrase
+unlock in Settings — deliberately compiled out of Release, because a hidden
+unlock in a shipping binary is an App Review 2.3.1 rejection. See
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#7b-getting-pro-for-free-on-your-own-device). Entitlement is read from
 `Transaction.currentEntitlements` on every refresh and never cached to disk, so
 a lapsed subscription actually loses Pro and a reinstall restores it without a
 Restore tap.
